@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     utilisateur_nom: str = Field(default="Brahim Bouhadja", description="Nom de l'utilisateur")
     utilisateur_entreprise: str = Field(default="Gradium", description="Entreprise de l'utilisateur")
     
+    # Sécurité (optionnel)
+    password_app: str = Field(default="", description="Mot de passe pour protéger l'application (optionnel)")
+    
     # Configuration Notion
     notion_cle_api: str = Field(default="", description="Clé API Notion")
     notion_database_id: str = Field(default="", description="ID de la base de données Notion")

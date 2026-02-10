@@ -16,6 +16,33 @@ if chemin_racine not in sys.path:
 
 import streamlit as st
 
+# ============================================
+# PROTECTION PAR MOT DE PASSE (optionnel)
+# Définir PASSWORD_APP dans les secrets Streamlit
+# ============================================
+def verifier_acces():
+    """Vérifie le mot de passe si configuré."""
+    config = obtenir_configuration()
+    password_attendu = getattr(config, 'password_app', None) or os.getenv('PASSWORD_APP')
+    
+    if not password_attendu:
+        return True  # Pas de mot de passe = accès libre
+    
+    if "password_verifie" not in st.session_state:
+        st.session_state.password_verifie = False
+    
+    if not st.session_state.password_verifie:
+        st.text_input("Mot de passe", type="password", key="password_input")
+        if st.button("Accéder"):
+            if st.session_state.password_input == password_attendu:
+                st.session_state.password_verifie = True
+                st.rerun()
+            else:
+                st.error("Mot de passe incorrect")
+        st.stop()
+    
+    return True
+
 # Import des adapters infrastructure
 from infrastructure.config import obtenir_configuration
 from infrastructure.api.notion_client import NotionClient
@@ -478,6 +505,9 @@ def main():
         layout="wide",
         initial_sidebar_state="expanded"
     )
+    
+    # Vérification du mot de passe (si configuré)
+    verifier_acces()
     
     # Initialisation
     initialiser_session()
