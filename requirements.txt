@@ -1,0 +1,24 @@
+# Voice Sniper - Dépendances Python
+
+# Configuration et validation
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+
+# HTTP Client
+requests>=2.31.0
+
+# Google Generative AI (Gemini)
+google-generativeai>=0.3.0
+
+# Interface Web
+streamlit>=1.28.0
+
+# Utilitaires
+python-dotenv>=1.0.0
+
+# Développement et tests (optionnel)
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+black>=23.0.0
+flake8>=6.0.0
+mypy>=1.5.0
