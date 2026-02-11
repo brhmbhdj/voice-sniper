@@ -298,6 +298,15 @@ def executer_generation(
             notion_client = NotionClient()
             hunter_client = HunterClient()
             
+            # Affichage de la config pour debug
+            st.info(f"🤖 Provider: {config.llm_provider} | Modèle Gemini: {config.gemini_modele}")
+            
+            # Vérification si on est sur le modèle par défaut (peut indiquer un problème de secrets)
+            if config.gemini_modele == "gemini-2.5-flash":
+                st.success("✅ Configuration OK - Modèle gemini-2.5-flash")
+            else:
+                st.warning(f"⚠️ Modèle utilisé: {config.gemini_modele} (vérifiez les secrets Streamlit)")
+            
             # Choix du provider LLM selon la configuration
             provider = config.llm_provider.lower()
             if provider == "kimi":

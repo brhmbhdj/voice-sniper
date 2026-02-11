@@ -9,15 +9,40 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 def get_streamlit_secrets():
-    """Récupère les secrets depuis Streamlit Cloud (st.secrets) si disponible."""
+    """Récupère les secrets depuis Streamlit Cloud (st.secrets ou os.environ)."""
+    # Sur Streamlit Cloud, les secrets sont aussi dans les variables d'environnement
+    # avec le préfixe STREAMLIT_SECRETS_ ou directement comme variables d'env
+    secrets = {}
+    
+    # Méthode 1: Via st.secrets (si Streamlit est déjà initialisé)
     try:
         import streamlit as st
-        # Si on est dans un environnement Streamlit, st.secrets existe
-        if hasattr(st, 'secrets'):
+        if hasattr(st, 'secrets') and st.secrets:
             return dict(st.secrets)
     except Exception:
         pass
-    return {}
+    
+    # Méthode 2: Via os.environ (Streamlit Cloud injecte les secrets comme variables d'env)
+    # Les secrets sont accessibles directement par leur nom en majuscules
+    mapping = {
+        'GEMINI_CLE_API': 'gemini_cle_api',
+        'GEMINI_MODELE': 'gemini_modele',
+        'KIMI_CLE_API': 'kimi_cle_api',
+        'KIMI_MODELE': 'kimi_modele',
+        'NOTION_CLE_API': 'notion_cle_api',
+        'NOTION_DATABASE_ID': 'notion_database_id',
+        'HUNTER_CLE_API': 'hunter_cle_api',
+        'GRADIUM_CLE_API': 'gradium_cle_api',
+        'GRADIUM_URL_API': 'gradium_url_api',
+        'LLM_PROVIDER': 'llm_provider',
+    }
+    
+    for env_key, config_key in mapping.items():
+        value = os.environ.get(env_key)
+        if value:
+            secrets[config_key] = value
+    
+    return secrets
 
 
 def get_settings_values():
