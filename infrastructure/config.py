@@ -18,7 +18,8 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
-        extra="ignore"  # Ignore les variables d'env non définies ici
+        extra="ignore",  # Ignore les variables d'env non définies ici
+        env_file_override=True  # Force le rechargement du .env
     )
     
     # Configuration générale

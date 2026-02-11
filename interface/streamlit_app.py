@@ -230,10 +230,14 @@ def verifier_configuration() -> bool:
     erreurs = []
     
     # Vérification de la config LLM
-    if config.llm_provider.lower() == "kimi":
+    provider = config.llm_provider.lower()
+    if provider == "kimi":
         if not config.kimi_cle_api:
             erreurs.append("❌ Clé API Kimi manquante (KIMI_CLE_API)")
-    else:
+    elif provider == "mock":
+        # Mode mock - pas besoin de clé API
+        pass
+    else:  # gemini par défaut
         if not config.gemini_est_configure:
             erreurs.append("❌ Clé API Gemini manquante")
     
@@ -295,9 +299,14 @@ def executer_generation(
             hunter_client = HunterClient()
             
             # Choix du provider LLM selon la configuration
-            if config.llm_provider.lower() == "kimi":
+            provider = config.llm_provider.lower()
+            if provider == "kimi":
                 print(f"🧠 Utilisation de Kimi ({config.kimi_modele})")
                 llm_client = KimiClient()
+            elif provider == "mock":
+                print(f"🎭 Mode MOCK activé - Pas d'appel API")
+                from infrastructure.api.mock_client import MockLLMClient
+                llm_client = MockLLMClient()
             else:
                 print(f"🧠 Utilisation de Gemini ({config.gemini_modele})")
                 llm_client = GeminiClient()
