@@ -82,7 +82,11 @@ class GeminiClient(LLMProvider):
                 print(f"✅ Modèle '{self._nom_modele_effectif}' chargé avec succès")
                 return self._modele
             except Exception as erreur:
-                print(f"   ⚠️  Échec avec '{self.nom_modele_preference}' : {str(erreur)[:100]}")
+                erreur_msg = str(erreur)
+                if "429" in erreur_msg or "quota" in erreur_msg.lower():
+                    print(f"   ⚠️  Quota dépassé pour '{self.nom_modele_preference}' - passage au modèle suivant")
+                else:
+                    print(f"   ⚠️  Échec avec '{self.nom_modele_preference}' : {erreur_msg[:100]}")
         
         # Étape 2 : Liste des noms à tester (ordre de préférence)
         candidats_a_tester = [
@@ -107,7 +111,9 @@ class GeminiClient(LLMProvider):
                 self._nom_modele_effectif = nom_candidat
                 print(f"✅ Modèle '{self._nom_modele_effectif}' chargé avec succès")
                 return self._modele
-            except Exception:
+            except Exception as e:
+                if "429" in str(e) or "quota" in str(e).lower():
+                    print(f"   ⚠️  Quota dépassé pour '{nom_candidat}' - essai suivant")
                 continue  # Essayer le suivant
         
         # Étape 3 : Découverte dynamique via l'API
@@ -255,8 +261,20 @@ class GeminiClient(LLMProvider):
             )
             
         except Exception as erreur:
+            erreur_str = str(erreur)
+            # Détection du quota dépassé (erreur 429)
+            if "429" in erreur_str or "quota" in erreur_str.lower() or "exceeded" in erreur_str.lower():
+                raise Exception(
+                    "🚫 Quota Gemini dépassé !\n\n"
+                    "Le modèle Gemini 2.5 Pro a atteint sa limite quotidienne.\n"
+                    "Les quotas gratuits se réinitialisent chaque jour.\n\n"
+                    "💡 Solutions :\n"
+                    "• Réessayez demain (les quotas se réinitialisent à minuit UTC)\n"
+                    "• Passez à Kimi (vérifiez LLM_PROVIDER=kimi dans .env)\n"
+                    "• Utilisez Gemini 1.5 Flash (moins de restrictions)"
+                )
             raise Exception(
-                f"Erreur lors de la génération du script avec Gemini : {str(erreur)}"
+                f"Erreur lors de la génération du script avec Gemini : {erreur_str}"
             )
 
     def detecter_langue_ideale(self, prospect: Prospect) -> Language:
