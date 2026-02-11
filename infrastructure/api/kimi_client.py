@@ -241,75 +241,135 @@ INSTRUCTIONS CRITIQUES
 5. Sois conversationnel et naturel
 6. Signe-toi avec ton vrai nom : "{nom_vendeur}"
 
-📋 STRUCTURE (60-90 secondes) :
+📋 STRUCTURE OBLIGATOIRE (60-90 secondes) :
 
-1. INTRODUCTION (10-15s) :
+SÉPARATION STRICTE ENTRE CHAQUE SECTION AVEC UNE LIGNE VIDE.
+
+1. INTRODUCTION (10-15s)
    "Hi [Prénom], {nom_vendeur} here from Gradium..."
    → Accroche personnalisée avec contexte des notes
+   → STOP - LIGNE VIDE OBLIGATOIRE APRÈS
 
-2. CORPS DU MESSAGE (20-30s) :
+2. CORPS DU MESSAGE (20-30s)
    → Relie le trigger à un problème concret du prospect
    → Mentionne 1-2 détails spécifiques des notes
+   → STOP - LIGNE VIDE OBLIGATOIRE APRÈS
 
-3. PROPOSITION DE VALEUR (15-20s) :
+3. PROPOSITION DE VALEUR (15-20s)
    → Évite "With that kind of..." ou phrases génériques
    → Donne une proposition CONCRÈTE et CHIFFRÉE si possible
    → Exemple : "We help companies like [Entreprise] reduce ramp-up time by 40% through automated signal detection..."
    → Explique COMMENT tu résous le problème
+   → STOP - LIGNE VIDE OBLIGATOIRE APRÈS
 
-4. GESTION D'OBJECTION (10-15s) :
+4. GESTION D'OBJECTION (10-15s)
    → Réponse à "I'm busy / Not interested / Already have a solution"
+   → STOP - LIGNE VIDE OBLIGATOIRE APRÈS
 
-5. CALL-TO-ACTION (5-10s) :
-   → Demande EXPLICITE de RDV STRICTEMENT EN {nom_langue.upper()}
-   → Exemple EN ANGLAIS : "Can we schedule a 15-minute call this week?"
-   → Le CTA DOIT être dans la MÊME LANGUE que le reste du script
-   → INTERDICTION ABSOLUE de mélanger les langues dans le CTA
-   → Si le script est en anglais, le CTA DOIT être : "Can we schedule a brief call this week?" ou "Are you available for a quick 15-minute chat?"
-   → Si le script est en français, le CTA DOIT être : "Pouvons-nous convenir d'un appel rapide cette semaine ?"
+5. CALL-TO-ACTION (5-10s) STRICTEMENT EN {nom_langue.upper()}
+   → Si ANGLAIS : "Can we schedule a brief 15-minute call this week?" ou "Are you available for a quick call?"
+   → Si FRANÇAIS : "Pouvons-nous convenir d'un appel rapide cette semaine ?"
+   → JAMAIS de mélange de langues dans le CTA
 
 🚫 INTERDIT :
 - Phrases génériques comme "With that kind of..."
 - Mélanger les langues dans le script
 - Parler de soi plus que du prospect
 - Oublier de signer avec son nom
+- Oublier les lignes vides entre les sections
 
-✅ RÉPONDS UNIQUEMENT AVEC LE SCRIPT COMPLET, sans introduction ni commentaire.
+✅ FORMAT DE SORTIE EXACT :
+1. [Texte introduction]
+
+2. [Texte corps du message]
+
+3. [Texte proposition de valeur]
+
+4. [Texte gestion objection]
+
+5. [Texte call-to-action EN {nom_langue.upper()}]
 """
 
     def _parser_script(self, contenu: str, langue: Language) -> Script:
-        """Parse la réponse de Kimi."""
+        """Parse la réponse de Kimi avec détection intelligente des sections."""
+        import re
+        
         contenu = contenu.strip()
         
         if not contenu:
             return Script(
-                introduction="Bonjour, je vous appelle concernant votre entreprise.",
-                corps_message="J'ai remarqué que vous êtes en pleine expansion.",
-                proposition_valeur="Je peux vous aider à optimiser vos processus.",
+                introduction="Hi, I'm calling about your company.",
+                corps_message="I've noticed you're growing fast.",
+                proposition_valeur="I can help you optimize your processes.",
                 langue=langue
             )
         
-        # Découper en paragraphes
-        paragraphes = [p.strip() for p in contenu.split('\n\n') if p.strip()]
+        # Patterns pour détecter les sections (plusieurs formats possibles)
+        patterns_sections = {
+            'intro': r'(?:^|\n)(?:1\.?\s*|INTRODUCTION[\s:]*|Intro[\s:]*)(.*?)(?=\n(?:2\.?\s*|CORPS|CORPS DU MESSAGE|Body|Message|Proposition|3\.?)|\n\n|\Z)',
+            'corps': r'(?:^|\n)(?:2\.?\s*|CORPS(?:\sDU\sMESSAGE)?[\s:]*|Body[\s:]*)(.*?)(?=\n(?:3\.?\s*|PROPOSITION|PROPOSITION DE VALEUR|Value|Proposition de valeur|4\.?)|\n\n|\Z)',
+            'proposition': r'(?:^|\n)(?:3\.?\s*|PROPOSITION(?:\sDE\sVALEUR)?[\s:]*|Value(?:\sProposition)?[\s:]*)(.*?)(?=\n(?:4\.?\s*|OBJECTION|OBJECTIONS|Gestion|4\.|CALL|CTA|5\.?)|\n\n|\Z)',
+            'objection': r'(?:^|\n)(?:4\.?\s*|OBJECTION(?:S)?[\s:]*|Gestion[\s:]*)(.*?)(?=\n(?:5\.?\s*|CALL|CALL-TO-ACTION|CTA|Action)|\n\n|\Z)',
+            'cta': r'(?:^|\n)(?:5\.?\s*|CALL-TO-ACTION[\s:]*|CTA[\s:]*|Action[\s:]*)(.*?)(?=\Z)',
+        }
         
-        introduction = paragraphes[0] if len(paragraphes) > 0 else ""
-        corps_message = paragraphes[1] if len(paragraphes) > 1 else ""
-        proposition_valeur = paragraphes[2] if len(paragraphes) > 2 else ""
-        objection_handling = [paragraphes[3]] if len(paragraphes) > 3 else []
-        call_to_action = paragraphes[4] if len(paragraphes) > 4 else ""
+        def extraire_section(pattern, contenu, default=""):
+            """Extrait une section avec regex, retourne default si pas trouvé."""
+            match = re.search(pattern, contenu, re.DOTALL | re.IGNORECASE)
+            if match:
+                texte = match.group(1).strip()
+                # Nettoyer les préfixes comme "1.", "INTRODUCTION", etc.
+                texte = re.sub(r'^(?:\d+\.?\s*|(?:INTRO|CORPS|PROP|OBJECTION|CALL)[^\n]*[\s:]*|\*)+', '', texte, flags=re.IGNORECASE).strip()
+                return texte
+            return default
         
-        # Nettoyer
-        import re
-        def nettoyer(texte):
-            texte = re.sub(r'^(\d+\.|INTRODUCTION|CORPS|PROPOSITION|OBJECTION|CALL-TO-ACTION)[\s:\-]*', '', texte, flags=re.IGNORECASE)
-            return texte.strip()
+        # Essayer d'extraire avec les patterns
+        introduction = extraire_section(patterns_sections['intro'], contenu)
+        corps_message = extraire_section(patterns_sections['corps'], contenu)
+        proposition_valeur = extraire_section(patterns_sections['proposition'], contenu)
+        objection_text = extraire_section(patterns_sections['objection'], contenu)
+        call_to_action = extraire_section(patterns_sections['cta'], contenu)
+        
+        # Fallback : si les patterns n'ont pas marché, découper par paragraphes
+        if not introduction:
+            paragraphes = [p.strip() for p in contenu.split('\n\n') if p.strip()]
+            if len(paragraphes) >= 1:
+                introduction = re.sub(r'^(?:\d+\.?\s*|[^\n]*?:\s*)+', '', paragraphes[0], flags=re.IGNORECASE).strip()
+            if len(paragraphes) >= 2 and not corps_message:
+                corps_message = re.sub(r'^(?:\d+\.?\s*|[^\n]*?:\s*)+', '', paragraphes[1], flags=re.IGNORECASE).strip()
+            if len(paragraphes) >= 3 and not proposition_valeur:
+                proposition_valeur = re.sub(r'^(?:\d+\.?\s*|[^\n]*?:\s*)+', '', paragraphes[2], flags=re.IGNORECASE).strip()
+            if len(paragraphes) >= 4 and not call_to_action:
+                call_to_action = re.sub(r'^(?:\d+\.?\s*|[^\n]*?:\s*)+', '', paragraphes[-1], flags=re.IGNORECASE).strip()
+        
+        # Valeurs par défaut si toujours vide
+        if not introduction:
+            introduction = "Hi, I'm calling about your company."
+        if not corps_message:
+            corps_message = "I've noticed some interesting developments at your company."
+        if not proposition_valeur:
+            proposition_valeur = "I believe we can help you achieve better results."
+        if not call_to_action:
+            # CTA dans la bonne langue
+            if langue == Language.FRENCH:
+                call_to_action = "Pouvons-nous convenir d'un appel de 15 minutes cette semaine ?"
+            elif langue == Language.SPANISH:
+                call_to_action = "¿Podemos programar una breve llamada esta semana?"
+            elif langue == Language.GERMAN:
+                call_to_action = "Können wir diese Woche einen kurzen Anruf vereinbaren?"
+            elif langue == Language.ITALIAN:
+                call_to_action = "Possiamo organizzare una breve chiamata questa settimana?"
+            else:  # ENGLISH par défaut
+                call_to_action = "Can we schedule a brief 15-minute call this week?"
+        
+        objection_handling = [objection_text] if objection_text else []
         
         return Script(
-            introduction=nettoyer(introduction),
-            corps_message=nettoyer(corps_message),
-            proposition_valeur=nettoyer(proposition_valeur),
-            objection_handling=[nettoyer(o) for o in objection_handling],
-            call_to_action=nettoyer(call_to_action),
+            introduction=introduction,
+            corps_message=corps_message,
+            proposition_valeur=proposition_valeur,
+            objection_handling=objection_handling,
+            call_to_action=call_to_action,
             langue=langue,
             duree_estimee=75
         )
