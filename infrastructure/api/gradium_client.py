@@ -187,43 +187,50 @@ class GradiumClient(VoiceProvider):
 
     def lister_voix_disponibles(self, langue: Language) -> list[dict]:
         """
-        Liste les voix Gradium disponibles.
-        🎙️ La voix Brahim est priorisée et peut parler TOUTES les langues.
+        Liste les voix Gradium disponibles selon la langue.
+        Retourne les voix natives de Gradium + Brahim en option.
         """
         voix_brahim_id = "cNKK8o0PXiqK6BZT"
+        code_langue = self._mapper_langue(langue) if langue != Language.AUTO else "fr"
         
-        # 🎙️ VOIX BRAHIM - Ma voix clonée qui parle toutes les langues
-        voix_gradium = [
-            {"id": voix_brahim_id, "name": "⭐ Brahim - Ma Voix (FR)", "language": "fr", "gender": "male", "custom": True},
-            {"id": voix_brahim_id, "name": "⭐ Brahim - Ma Voix (EN)", "language": "en", "gender": "male", "custom": True},
-        ]
-        
-        # Voix standard de backup (si Brahim ne fonctionne pas)
-        voix_standard = [
+        # 🎙️ VOIX NATIVES GRADIUM par langue
+        voix_francaises = [
             {"id": "Elise", "name": "Elise - Français Féminin", "language": "fr", "gender": "female"},
-            {"id": "Emma", "name": "Emma - Anglais US Féminin", "language": "en", "country": "us", "gender": "female"},
-            {"id": "Kent", "name": "Kent - Anglais US Masculin", "language": "en", "country": "us", "gender": "male"},
+            {"id": "Denise", "name": "Denise - Français Féminin", "language": "fr", "gender": "female"},
+            {"id": "Henri", "name": "Henri - Français Masculin", "language": "fr", "gender": "male"},
+            {"id": voix_brahim_id, "name": "⭐ Brahim (Voix Clonée - Accent Anglophone)", "language": "fr", "gender": "male", "custom": True},
         ]
         
-        # Si une langue spécifique est demandée, filtrer
-        if langue != Language.AUTO:
-            code_langue = self._mapper_langue(langue)
-            # Retourner Brahim pour cette langue + voix standards de backup
-            voix_filtrees = [v for v in voix_gradium if v["language"] == code_langue]
-            voix_filtrees += [v for v in voix_standard if v["language"] == code_langue]
-            return voix_filtrees
+        voix_anglaises = [
+            {"id": "Emma", "name": "Emma - Anglais US Féminin", "language": "en", "country": "us", "gender": "female"},
+            {"id": "Alice", "name": "Alice - Anglais UK Féminin", "language": "en", "country": "gb", "gender": "female"},
+            {"id": "Harry", "name": "Harry - Anglais UK Masculin", "language": "en", "country": "gb", "gender": "male"},
+            {"id": "Kent", "name": "Kent - Anglais US Masculin", "language": "en", "country": "us", "gender": "male"},
+            {"id": voix_brahim_id, "name": "⭐ Brahim (Voix Clonée)", "language": "en", "gender": "male", "custom": True},
+        ]
         
-        # Sinon retourner toutes les voix Brahim + standards
-        return voix_gradium + voix_standard
+        # Retourner les voix selon la langue demandée
+        if code_langue == "fr":
+            return voix_francaises
+        elif code_langue == "en":
+            return voix_anglaises
+        elif code_langue in ["es", "de", "it"]:
+            # Pour les autres langues, retourner les voix anglaises + Brahim
+            return voix_anglaises
+        else:
+            # Par défaut, retourner les voix françaises
+            return voix_francaises
 
     def _get_voix_par_defaut(self, langue: Language) -> str:
         """
-        Retourne la voix par défaut.
-        🎙️ TOUJOURS utiliser la voix Brahim (cNKK8o0PXiqK6BZT) 
-        quelle que soit la langue - elle parle français, anglais, etc.
+        Retourne la voix par défaut selon la langue.
         """
-        # ID exact de la voix Brahim clonée - utilisée pour TOUTES les langues
-        return "cNKK8o0PXiqK6BZT"
+        code_langue = self._mapper_langue(langue) if langue != Language.AUTO else "fr"
+        
+        if code_langue == "fr":
+            return "Elise"  # Voix française féminine par défaut
+        else:
+            return "Emma"   # Voix anglaise féminine par défaut
 
     def _mapper_langue(self, langue: Language) -> str:
         """Mappe l'enum Language vers le code Gradium."""

@@ -205,31 +205,35 @@ def afficher_options_generation():
                 help="1.0 = vitesse normale. Gradium gère la vitesse nativement."
             )
         
-        # 🎙️ VOIX BRAHIM PAR DÉFAUT pour toutes les langues
-        st.info("🎙️ **Voix Brahim** sera utilisée (parle FR/EN selon la langue détectée)")
+        # 🎙️ SÉLECTION DE VOIX selon la langue
+        st.info("🎙️ **Sélection automatique** d'une voix adaptée à la langue")
         
-        # Option avancée pour changer de voix (optionnel)
-        voix_selectionnee = "cNKK8o0PXiqK6BZT"  # Default: Brahim
-        voix_nom = "Brahim"  # Default nom
+        from infrastructure.api.gradium_client import GradiumClient
+        gradium_client = GradiumClient()
+        voix_disponibles = gradium_client.lister_voix_disponibles(langue if langue != Language.AUTO else Language.FRENCH)
         
-        with st.expander("🎙️ Changer de voix (optionnel)"):
-            from infrastructure.api.gradium_client import GradiumClient
-            gradium_client = GradiumClient()
-            voix_disponibles = gradium_client.lister_voix_disponibles(langue if langue != Language.AUTO else Language.FRENCH)
-            
-            # Dictionnaire avec nom → {id, nom_prononce}
-            voix_options = {}
-            for v in voix_disponibles:
-                nom_voix = v['name']
-                # Extraire le prénom de la voix (ex: "⭐ Brahim - Ma Voix (FR)" → "Brahim")
+        # Dictionnaire avec nom → {id, nom_prononce}
+        voix_options = {}
+        for v in voix_disponibles:
+            nom_voix = v['name']
+            # Extraire le prénom de la voix
+            if ' - ' in nom_voix:
                 prenom_voix = nom_voix.split(' - ')[0].replace('⭐ ', '').strip()
-                voix_options[nom_voix] = {'id': v['id'], 'prenom': prenom_voix}
-            
+            else:
+                prenom_voix = nom_voix.split()[0].replace('⭐ ', '').strip()
+            voix_options[nom_voix] = {'id': v['id'], 'prenom': prenom_voix}
+        
+        with st.expander("🎙️ Changer de voix"):
             voix_selectionnee_nom = st.selectbox(
-                label="Voix disponibles",
+                label="Voix disponibles pour cette langue",
                 options=list(voix_options.keys()),
                 index=0
             )
+            voix_selectionnee = voix_options[voix_selectionnee_nom]['id']
+            voix_nom = voix_options[voix_selectionnee_nom]['prenom']
+        else:
+            # Par défaut, prendre la première voix (qui est la voix native recommandée)
+            voix_selectionnee_nom = list(voix_options.keys())[0]
             voix_selectionnee = voix_options[voix_selectionnee_nom]['id']
             voix_nom = voix_options[voix_selectionnee_nom]['prenom']
     

@@ -49,7 +49,7 @@ class GeminiClient(LLMProvider):
             "temperature": 0.7,
             "top_p": 0.95,
             "top_k": 40,
-            "max_output_tokens": 350,  # ~1 minute de parole max
+            "max_output_tokens": 8192,  
         }
 
     def _get_model(self) -> genai.GenerativeModel:
@@ -411,14 +411,13 @@ class GeminiClient(LLMProvider):
 """
         
         prompt = f"""
-Tu es Brahim Bouhadja, fondateur de Gradium (anciennement Wesh). Tu dois écrire un cold call VENDEUR et PERCUTANT pour {prospect.nom_complet}.
+Tu es Brahim Bouhadja, sales chez Gradium. Tu dois écrire un cold call VENDEUR et PERCUTANT pour {prospect.nom_complet}.
 
 ========================================
 QUI EST GRADIUM ? (À UTILISER DANS LE SCRIPT)
 ========================================
 Gradium est une startup française qui développe des Audio LLMs natifs. Notre techno:
 - Des agents vocaux IA ultra-naturels avec latence quasi-nulle
-- Capables de qualifier des leads 24/7 comme des humains
 - 10x moins chers qu'une équipe de BDR
 - Pas des voice bots basiques - de vrais LLM vocaux avec émotion et fluidité
 
@@ -480,6 +479,10 @@ INSTRUCTIONS ABSOLUES
 - "Nous sommes une entreprise qui..." → NUL
 - Parler de soi au lieu du prospect
 - Mélanger français et anglais
+- Utiliser un ton trop formel ou trop familier - Trouve le juste milieu percutant
+- Utiliser des phrases génériques sans personnalisation
+- Faire un script trop long ou trop court - vise 50-60 secondes
+- commencer par "(Le téléphone sonne, Constance décroche)"
 
 ✅ FORMAT DE SORTIE :
 Un script FLUIDE, NATUREL, sans numéros de section. Juste du texte qui se lit comme une vraie conversation téléphonique percutante. Le script doit faire 45-60 secondes à l'oral.
