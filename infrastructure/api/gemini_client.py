@@ -49,7 +49,7 @@ class GeminiClient(LLMProvider):
             "temperature": 0.7,
             "top_p": 0.95,
             "top_k": 40,
-            "max_output_tokens": 8192,
+            "max_output_tokens": 350,  # ~1 minute de parole max
         }
 
     def _get_model(self) -> genai.GenerativeModel:
@@ -461,6 +461,8 @@ INSTRUCTIONS ABSOLUES
 ========================================
 
 🎯 OBJECTIF : VENDRE Gradium. Pas être sympa. VENDRE. Le prospect doit sentir l'urgence et l'opportunité.
+
+⏱️ DURÉE MAXIMALE : 1 MINUTE (60 secondes) - Pas plus long. Un cold call efficace est court et percutant.
 
 🌐 LANGUE : 100% EN {nom_langue.upper()} - INTERDICTION TOTALE DE MÉLANGER LES LANGUES
 
