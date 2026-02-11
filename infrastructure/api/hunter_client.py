@@ -44,6 +44,10 @@ class HunterClient(HunterDataProvider):
         Raises:
             Exception: Si la requête échoue
         """
+        # Si pas de clé API, retourner liste vide (Hunter est optionnel)
+        if not self.cle_api:
+            return []
+        
         try:
             # Nettoyage du domaine
             domaine_nettoye = domaine.replace("https://", "").replace("http://", "").replace("www.", "")
@@ -96,6 +100,10 @@ class HunterClient(HunterDataProvider):
         Returns:
             Dictionnaire avec le résultat de la vérification
         """
+        # Si pas de clé API, retourner statut inconnu (Hunter est optionnel)
+        if not self.cle_api:
+            return {"email": email, "statut": "inconnu", "score": 0}
+        
         try:
             url = f"{self.base_url}/email-verifier"
             params = {
