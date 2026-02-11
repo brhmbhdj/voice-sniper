@@ -528,9 +528,7 @@ SÉPARATION STRICTE ENTRE CHAQUE SECTION AVEC UNE LIGNE VIDE.
         return prompt
 
     def _parser_script(self, contenu: str, langue: Language) -> Script:
-        """
-        Parse la réponse de Gemini avec détection intelligente des sections.
-        """
+        """Parse la réponse de Gemini - Version simple et robuste."""
         import re
         
         contenu = contenu.strip()
@@ -543,43 +541,31 @@ SÉPARATION STRICTE ENTRE CHAQUE SECTION AVEC UNE LIGNE VIDE.
                 langue=langue
             )
         
-        # Patterns pour détecter les sections (plusieurs formats possibles)
-        patterns_sections = {
-            'intro': r'(?:^|\n)(?:1\.?\s*|INTRODUCTION[\s:]*|Intro[\s:]*)(.*?)(?=\n(?:2\.?\s*|CORPS|CORPS DU MESSAGE|Body|Message|Proposition|3\.?)|\n\n|\Z)',
-            'corps': r'(?:^|\n)(?:2\.?\s*|CORPS(?:\sDU\sMESSAGE)?[\s:]*|Body[\s:]*)(.*?)(?=\n(?:3\.?\s*|PROPOSITION|PROPOSITION DE VALEUR|Value|Proposition de valeur|4\.?)|\n\n|\Z)',
-            'proposition': r'(?:^|\n)(?:3\.?\s*|PROPOSITION(?:\sDE\sVALEUR)?[\s:]*|Value(?:\sProposition)?[\s:]*)(.*?)(?=\n(?:4\.?\s*|OBJECTION|OBJECTIONS|Gestion|4\.|CALL|CTA|5\.?)|\n\n|\Z)',
-            'objection': r'(?:^|\n)(?:4\.?\s*|OBJECTION(?:S)?[\s:]*|Gestion[\s:]*)(.*?)(?=\n(?:5\.?\s*|CALL|CALL-TO-ACTION|CTA|Action)|\n\n|\Z)',
-            'cta': r'(?:^|\n)(?:5\.?\s*|CALL-TO-ACTION[\s:]*|CTA[\s:]*|Action[\s:]*)(.*?)(?=\Z)',
-        }
+        # Découper en blocs (séparés par ligne vide ou numéro de section)
+        # Remplacer les numéros de section par des marqueurs
+        contenu_clean = re.sub(r'\n?\s*(\d+)\.\s*', r'\n\nSECTION_\1\n\n', contenu)
         
-        def extraire_section(pattern, contenu, default=""):
-            """Extrait une section avec regex, retourne default si pas trouvé."""
-            match = re.search(pattern, contenu, re.DOTALL | re.IGNORECASE)
-            if match:
-                texte = match.group(1).strip()
-                # Nettoyer les préfixes comme "1.", "INTRODUCTION", etc.
-                texte = re.sub(r'^(?:\d+\.?\s*|(?:INTRO|CORPS|PROP|OBJECTION|CALL)[^\n]*[\s:]*|\*)+', '', texte, flags=re.IGNORECASE).strip()
-                return texte
-            return default
+        # Découper en paragraphes
+        paragraphes = [p.strip() for p in contenu_clean.split('\n\n') if p.strip() and len(p.strip()) > 10]
         
-        # Essayer d'extraire avec les patterns
-        introduction = extraire_section(patterns_sections['intro'], contenu)
-        corps_message = extraire_section(patterns_sections['corps'], contenu)
-        proposition_valeur = extraire_section(patterns_sections['proposition'], contenu)
-        objection_text = extraire_section(patterns_sections['objection'], contenu)
-        call_to_action = extraire_section(patterns_sections['cta'], contenu)
+        # Nettoyer les préfixes de section
+        def nettoyer_bloc(texte):
+            # Enlever les préfixes comme SECTION_1, INTRODUCTION, etc.
+            texte = re.sub(r'^SECTION_\d+\s*', '', texte, flags=re.IGNORECASE)
+            texte = re.sub(r'^(INTRODUCTION|CORPS|PROPOSITION|OBJECTION|CALL-TO-ACTION|CTA)[\s:]*', '', texte, flags=re.IGNORECASE)
+            return texte.strip()
         
-        # Fallback : si les patterns n'ont pas marché, découper par paragraphes
+        # Assigner les paragraphes aux sections
+        introduction = nettoyer_bloc(paragraphes[0]) if len(paragraphes) > 0 else ""
+        corps_message = nettoyer_bloc(paragraphes[1]) if len(paragraphes) > 1 else ""
+        proposition_valeur = nettoyer_bloc(paragraphes[2]) if len(paragraphes) > 2 else ""
+        objection_text = nettoyer_bloc(paragraphes[3]) if len(paragraphes) > 3 else ""
+        call_to_action = nettoyer_bloc(paragraphes[-1]) if len(paragraphes) > 4 else ""
+        
+        # Fallback si sections vides - prendre tout le contenu
         if not introduction:
-            paragraphes = [p.strip() for p in contenu.split('\n\n') if p.strip()]
-            if len(paragraphes) >= 1:
-                introduction = re.sub(r'^(?:\d+\.?\s*|[^\n]*?:\s*)+', '', paragraphes[0], flags=re.IGNORECASE).strip()
-            if len(paragraphes) >= 2 and not corps_message:
-                corps_message = re.sub(r'^(?:\d+\.?\s*|[^\n]*?:\s*)+', '', paragraphes[1], flags=re.IGNORECASE).strip()
-            if len(paragraphes) >= 3 and not proposition_valeur:
-                proposition_valeur = re.sub(r'^(?:\d+\.?\s*|[^\n]*?:\s*)+', '', paragraphes[2], flags=re.IGNORECASE).strip()
-            if len(paragraphes) >= 4 and not call_to_action:
-                call_to_action = re.sub(r'^(?:\d+\.?\s*|[^\n]*?:\s*)+', '', paragraphes[-1], flags=re.IGNORECASE).strip()
+            lines = contenu.split('\n')
+            introduction = lines[0] if lines else ""
         
         # Valeurs par défaut si toujours vide
         if not introduction:

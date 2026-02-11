@@ -69,6 +69,7 @@ def initialiser_session():
 def afficher_entete():
     """Affiche l'en-tête de l'application avec branding utilisateur."""
     import os
+    from datetime import datetime
     config = obtenir_configuration()
     
     # Logo et branding Gradium
@@ -87,6 +88,11 @@ def afficher_entete():
         st.caption(f"Propulsé par **{config.utilisateur_entreprise}** | Développé par **{config.utilisateur_nom}**")
     
     st.subheader("Générateur de Cold Calls Vocaux Ultra-Personnalisés")
+    
+    # Timestamp pour identifier la version déployée
+    timestamp = datetime.now().strftime("%d/%m/%Y %H:%M")
+    st.caption(f"🕐 Version déployée : {timestamp}")
+    
     st.markdown("---")
 
 
@@ -203,6 +209,8 @@ def afficher_options_generation():
         st.info("🎙️ **Voix Brahim** sera utilisée (parle FR/EN selon la langue détectée)")
         
         # Option avancée pour changer de voix (optionnel)
+        voix_selectionnee = "cNKK8o0PXiqK6BZT"  # Default: Brahim
+        
         with st.expander("🎙️ Changer de voix (optionnel)"):
             from infrastructure.api.gradium_client import GradiumClient
             gradium_client = GradiumClient()
@@ -215,9 +223,6 @@ def afficher_options_generation():
                 index=0
             )
             voix_selectionnee = voix_options[voix_selectionnee_nom]
-        
-        # Par défaut, utiliser Brahim (voix clonée)
-        voix_selectionnee = "cNKK8o0PXiqK6BZT"
     
     return langue, ton_script, voix_selectionnee, vitesse_lecture
 
