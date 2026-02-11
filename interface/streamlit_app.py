@@ -387,24 +387,32 @@ def afficher_resultat():
     st.markdown("---")
     st.header("📝 Script Généré")
     
-    # Affichage des parties du script
+    # Affichage du script
     with st.container():
-        st.subheader("👋 Introduction")
-        st.info(script.introduction)
-        
-        st.subheader("💬 Corps du message")
-        st.write(script.corps_message)
-        
-        st.subheader("✨ Proposition de valeur")
-        st.success(script.proposition_valeur)
-        
-        if script.objection_handling:
-            st.subheader("🛡️ Gestion d'objection")
-            for objection in script.objection_handling:
-                st.warning(objection)
-        
-        st.subheader("🎯 Call-to-action")
-        st.write(script.call_to_action)
+        # Si c'est le nouveau format (tout dans corps_message)
+        if not script.introduction and not script.proposition_valeur and script.corps_message:
+            st.markdown("### 🎭 Script complet")
+            st.markdown("---")
+            st.markdown(script.corps_message)
+            st.markdown("---")
+        else:
+            # Ancien format avec sections
+            st.subheader("👋 Introduction")
+            st.info(script.introduction)
+            
+            st.subheader("💬 Corps du message")
+            st.write(script.corps_message)
+            
+            st.subheader("✨ Proposition de valeur")
+            st.success(script.proposition_valeur)
+            
+            if script.objection_handling:
+                st.subheader("🛡️ Gestion d'objection")
+                for objection in script.objection_handling:
+                    st.warning(objection)
+            
+            st.subheader("🎯 Call-to-action")
+            st.write(script.call_to_action)
     
     # Affichage de l'audio
     st.markdown("---")

@@ -92,9 +92,24 @@ class KimiClient(LLMProvider):
             
             # Extraction du contenu généré
             data = response.json()
-            contenu_genere = data["choices"][0]["message"]["content"]
+            contenu_genere = data["choices"][0]["message"]["content"].strip()
             
-            return self._parser_script(contenu_genere, langue)
+            # Retourner le texte brut sans parsing
+            if not contenu_genere:
+                return Script(
+                    introduction="",
+                    corps_message="Script non généré. Veuillez réessayer.",
+                    proposition_valeur="",
+                    langue=langue
+                )
+            
+            return Script(
+                introduction="",
+                corps_message=contenu_genere,
+                proposition_valeur="",
+                langue=langue,
+                duree_estimee=60
+            )
             
         except requests.exceptions.HTTPError as e:
             if e.response.status_code == 401:
@@ -174,24 +189,43 @@ class KimiClient(LLMProvider):
 """
         
         return f"""
-Tu es un expert en vente B2B. Génère un script de cold call ULTRA-PERSONNALISÉ en {nom_langue} avec un ton {ton}.
+Tu es Brahim Bouhadja, fondateur de Gradium (anciennement Wesh). Tu dois écrire un cold call VENDEUR et PERCUTANT pour {prospect.nom_complet}.
 
 ========================================
-TON IDENTITÉ
+QUI EST GRADIUM ? (À UTILISER DANS LE SCRIPT)
 ========================================
-- Ton nom : {nom_vendeur}
-- Ton entreprise : Gradium
+Gradium est une startup française qui développe des Audio LLMs natifs. Notre techno:
+- Des agents vocaux IA ultra-naturels avec latence quasi-nulle
+- Capables de qualifier des leads 24/7 comme des humains
+- 10x moins chers qu'une équipe de BDR
+- Pas des voice bots basiques - de vrais LLM vocaux avec émotion et fluidité
+
+EXEMPLE DE SCRIPT PERCUTANT (pour inspiration):
+"C'est ton premier BDR qui ne dort jamais. Je suis le modèle Gradium v1. Je viens de qualifier 500 leads pendant que tu prenais ton café, et j'ai détecté 12 opportunités chaudes pour ton équipe.
+
+J'ai coûté 4$ ce matin. Un humain t'aurait coûté 200$.
+
+[Prénom], si je suis capable de te convaincre maintenant avec cette fluidité et cette latence nulle... imagine ce que je peux faire avec tes clients.
+
+On me déploie quand sur ton CRM ?"
+
+OU CE STYLE :
+"Bonjour [Prénom],
+
+Je vois que vous scalez massivement l'équipe Sales pour distribuer [produit].
+
+Le problème des équipes BDR humaines, c'est qu'elles sont limitées par le nombre d'heures dans une journée. Le problème des Voice Bots actuels, c'est la latence et le manque d'émotion qui tuent la conversion.
+
+Gradium est différent : Nous développons des Audio LLMs natifs. Résultat : des interactions vocales ultra-rapides, naturelles et expressives, capables de qualifier vos leads aussi bien que vos meilleurs humains, mais à l'échelle infinie.
+
+Si vous cherchez à ce que votre 'Outbound' soit aussi intelligent que votre modèle, on devrait se parler."
 
 ========================================
-INFORMATIONS DU PROSPECT
+INFORMATIONS DU PROSPECT (OBLIGATOIRE - UTILISER CES DÉTAILS)
 ========================================
 - Nom : {prospect.nom_complet}
 - Entreprise : {prospect.entreprise}
-{titre_info}
-{taille_info}
-{secteur_info}
-{statut_info}
-
+- Poste : {prospect.titre or 'Non spécifié'}
 {notes_context}
 
 ========================================
@@ -201,85 +235,30 @@ TRIGGER
 - Description : {trigger.description}
 
 ========================================
-INSTRUCTIONS CRITIQUES
+INSTRUCTIONS ABSOLUES
 ========================================
 
-🎯 OBJECTIF : Créer un script qui montre que tu as fait tes recherches et qui génère un RDV.
+🎯 OBJECTIF : VENDRE Gradium. Pas être sympa. VENDRE. Le prospect doit sentir l'urgence et l'opportunité.
 
-🌐 LANGUE : 100% DU SCRIPT DOIT ÊTRE EN {nom_langue.upper()} :
-- Introduction en {nom_langue}
-- Corps du message en {nom_langue}
-- Proposition de valeur en {nom_langue}
-- Call-to-action en {nom_langue}
-- AUCUNE phrase dans une autre langue
+🌐 LANGUE : 100% EN {nom_langue.upper()} - INTERDICTION TOTALE DE MÉLANGER LES LANGUES
 
-⚠️ RÈGLES STRICTES :
-1. Utilise IMPÉRATIVEMENT les informations des NOTES NOTION
-2. Mentionne des éléments spécifiques trouvés dans les notes
-3. Parle en {nom_langue} NATIF (pas de mots français si la langue est anglais)
-4. Mentionne le prénom du prospect 2-3 fois
-5. Sois conversationnel et naturel
-6. Signe-toi avec ton vrai nom : "{nom_vendeur}"
+⚠️ RÈGLES :
+1. Commence directement par l'accroche - pas de "Bonjour, comment allez-vous"
+2. Utilise les NOTES NOTION ci-dessus pour personnaliser
+3. Sois direct, percutant, presque provocateur mais professionnel
+4. Mentionne Gradium comme la solution ultime à leur problème de scale
+5. Crée de l'urgence : "Pendant qu'on parle, vos concurrents..."
+6. Le ton doit être : confiant, expert, légèrement provocateur
 
-📋 STRUCTURE OBLIGATOIRE (60-90 secondes) :
+🚫 INTERDICTIONS ABSOLUES :
+- "I believe we can help you achieve better results" → NUL
+- "With that kind of..." → NUL
+- "Nous sommes une entreprise qui..." → NUL
+- Parler de soi au lieu du prospect
+- Mélanger français et anglais
 
-SÉPARATION STRICTE ENTRE CHAQUE SECTION AVEC UNE LIGNE VIDE.
-
-1. INTRODUCTION (10-15s)
-   "Hi [Prénom], {nom_vendeur} here from Gradium..."
-   → Accroche personnalisée avec contexte des notes
-   → STOP - LIGNE VIDE OBLIGATOIRE APRÈS
-
-2. CORPS DU MESSAGE (20-30s)
-   → Relie le trigger à un problème concret du prospect
-   → Mentionne 1-2 détails spécifiques des notes
-   → STOP - LIGNE VIDE OBLIGATOIRE APRÈS
-
-3. PROPOSITION DE VALEUR (15-20s) - SOIS PERSUASIF ET VENDEUR
-   → STRUCTURE OBLIGATOIRE :
-     • HOOK : Accroche immédiate avec un chiffre ou résultat concret (ex: "Nos clients réduisent leur cycle de vente de 30% en 3 mois")
-     • PROBLÈME : Reformule le pain point du prospect en une phrase percutante
-     • SOLUTION : Explique EXACTEMENT comment Gradium résout ce problème (IA voix + automatisation)
-     • DIFFÉRENCIATION : Pourquoi Gradium et pas la concurrence ? (technologie propriétaire, 10x plus rapide)
-     • PREUVE : Mentionne un résultat client ou un élément crédible
-   
-   → EXEMPLES DE PROPOSITIONS PERCUTANTES :
-     EN ANGLAIS : "We helped similar AI startups cut their BDR onboarding from 3 months to 2 weeks. Our voice AI handles 80% of initial outreach, letting your team focus on closing. That's not just efficiency—it's 10x ROI in quarter one."
-     EN FRANÇAIS : "Nous avons aidé des startups similaires à réduire l'onboarding de leurs BDR de 3 mois à 2 semaines. Notre IA vocale gère 80% du premier contact, permettant à votre équipe de se concentrer sur la signature. Ce n'est pas juste de l'efficacité—c'est un ROI 10x dès le premier trimestre."
-   
-   → INTERDICTIONS :
-     • PAS de phrases génériques comme "We can help you achieve better results"
-     • PAS de "With that kind of..."
-     • PAS de jargon technique sans explication
-   
-   → STOP - LIGNE VIDE OBLIGATOIRE APRÈS
-
-4. GESTION D'OBJECTION (10-15s)
-   → Réponse à "I'm busy / Not interested / Already have a solution"
-   → STOP - LIGNE VIDE OBLIGATOIRE APRÈS
-
-5. CALL-TO-ACTION (5-10s) STRICTEMENT EN {nom_langue.upper()}
-   → Si ANGLAIS : "Can we schedule a brief 15-minute call this week?" ou "Are you available for a quick call?"
-   → Si FRANÇAIS : "Pouvons-nous convenir d'un appel rapide cette semaine ?"
-   → JAMAIS de mélange de langues dans le CTA
-
-🚫 INTERDIT :
-- Phrases génériques comme "With that kind of..."
-- Mélanger les langues dans le script
-- Parler de soi plus que du prospect
-- Oublier de signer avec son nom
-- Oublier les lignes vides entre les sections
-
-✅ FORMAT DE SORTIE EXACT :
-1. [Texte introduction]
-
-2. [Texte corps du message]
-
-3. [Texte proposition de valeur]
-
-4. [Texte gestion objection]
-
-5. [Texte call-to-action EN {nom_langue.upper()}]
+✅ FORMAT DE SORTIE :
+Un script FLUIDE, NATUREL, sans numéros de section. Juste du texte qui se lit comme une vraie conversation téléphonique percutante. Le script doit faire 45-60 secondes à l'oral.
 """
 
     def _parser_script(self, contenu: str, langue: Language) -> Script:
