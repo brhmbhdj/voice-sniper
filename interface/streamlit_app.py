@@ -223,17 +223,17 @@ def afficher_options_generation():
                 prenom_voix = nom_voix.split()[0].replace('⭐ ', '').strip()
             voix_options[nom_voix] = {'id': v['id'], 'prenom': prenom_voix}
         
+        # Valeurs par défaut (première voix = voix native recommandée)
+        voix_selectionnee_nom = list(voix_options.keys())[0]
+        voix_selectionnee = voix_options[voix_selectionnee_nom]['id']
+        voix_nom = voix_options[voix_selectionnee_nom]['prenom']
+        
         with st.expander("🎙️ Changer de voix"):
             voix_selectionnee_nom = st.selectbox(
                 label="Voix disponibles pour cette langue",
                 options=list(voix_options.keys()),
                 index=0
             )
-            voix_selectionnee = voix_options[voix_selectionnee_nom]['id']
-            voix_nom = voix_options[voix_selectionnee_nom]['prenom']
-        else:
-            # Par défaut, prendre la première voix (qui est la voix native recommandée)
-            voix_selectionnee_nom = list(voix_options.keys())[0]
             voix_selectionnee = voix_options[voix_selectionnee_nom]['id']
             voix_nom = voix_options[voix_selectionnee_nom]['prenom']
     
