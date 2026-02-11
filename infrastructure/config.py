@@ -54,7 +54,7 @@ class Settings(BaseSettings):
     # Configuration Gemini (Google AI)
     gemini_cle_api: str = Field(default="", description="Clé API Gemini")
     gemini_modele: str = Field(
-        default="gemini-2.5-pro-preview-03-25",
+        default="gemini-2.5-pro-preview-03-25",  # Gemini 2.5 Pro
         description="Modèle Gemini à utiliser"
     )
     

@@ -86,15 +86,14 @@ class GeminiClient(LLMProvider):
         
         # Étape 2 : Liste des noms à tester (ordre de préférence)
         candidats_a_tester = [
+            "gemini-2.5-pro-preview-03-25",
+            "gemini-2.5-pro",
+            "gemini-2.5-flash",
             "gemini-1.5-flash-latest",
             "gemini-1.5-flash",
-            "gemini-1.5-flash-001",
             "gemini-1.5-pro-latest",
             "gemini-1.5-pro",
-            "gemini-1.5-pro-001",
             "gemini-1.0-pro-latest",
-            "gemini-1.0-pro",
-            "gemini-pro",
         ]
         
         for nom_candidat in candidats_a_tester:
@@ -162,16 +161,23 @@ class GeminiClient(LLMProvider):
             # Stratégie de sélection par priorité
             modele_choisi = None
             
-            # Priorité 1 : Flash (rapide, économique)
+            # Priorité 1 : Pro 2.5 (le plus récent et puissant)
             for m in modeles_generatifs:
-                if 'flash' in m.name.lower():
+                if '2.5-pro' in m.name.lower():
                     modele_choisi = m.name
                     break
             
-            # Priorité 2 : Pro (plus puissant)
+            # Priorité 2 : Pro (puissant)
             if not modele_choisi:
                 for m in modeles_generatifs:
                     if 'pro' in m.name.lower():
+                        modele_choisi = m.name
+                        break
+            
+            # Priorité 3 : Flash (rapide, économique)
+            if not modele_choisi:
+                for m in modeles_generatifs:
+                    if 'flash' in m.name.lower():
                         modele_choisi = m.name
                         break
             
