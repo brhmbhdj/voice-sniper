@@ -231,6 +231,54 @@ class GradiumClient(VoiceProvider):
             return "Elise"  # Voix française féminine par défaut
         else:
             return "Emma"   # Voix anglaise féminine par défaut
+    
+    def get_voix_par_langue_et_genre(self, langue: Language, genre: str) -> str:
+        """
+        Retourne une voix appropriée selon la langue et le genre.
+        
+        Args:
+            langue: Langue du script
+            genre: "Femme" ou "Homme"
+            
+        Returns:
+            ID de la voix à utiliser
+        """
+        code_langue = self._mapper_langue(langue) if langue != Language.AUTO else "fr"
+        genre_lower = genre.lower().strip()
+        
+        # Mapping des voix par langue et genre
+        voix_mapping = {
+            "fr": {
+                "femme": "Elise",
+                "homme": "Henri"
+            },
+            "en": {
+                "femme": "Emma",
+                "homme": "Kent"
+            },
+            "es": {
+                "femme": "Emma",  # Fallback sur anglais si pas d'espagnol
+                "homme": "Kent"
+            },
+            "de": {
+                "femme": "Emma",
+                "homme": "Kent"
+            },
+            "it": {
+                "femme": "Emma",
+                "homme": "Kent"
+            }
+        }
+        
+        # Retourner la voix appropriée ou une valeur par défaut
+        if code_langue in voix_mapping and genre_lower in voix_mapping[code_langue]:
+            return voix_mapping[code_langue][genre_lower]
+        
+        # Fallback
+        if code_langue == "fr":
+            return "Elise"
+        else:
+            return "Emma"
 
     def _mapper_langue(self, langue: Language) -> str:
         """Mappe l'enum Language vers le code Gradium."""

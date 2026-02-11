@@ -205,39 +205,17 @@ def afficher_options_generation():
                 help="1.0 = vitesse normale. Gradium gère la vitesse nativement."
             )
         
-        # 🎙️ SÉLECTION DE VOIX selon la langue
-        st.info("🎙️ **Sélection automatique** d'une voix adaptée à la langue")
+        # 🎙️ CHOIX DU GENRE (la voix sera sélectionnée automatiquement selon la langue détectée)
+        st.info("🎙️ **Le personnage** sera choisi automatiquement selon la langue du prospect")
         
-        from infrastructure.api.gradium_client import GradiumClient
-        gradium_client = GradiumClient()
-        voix_disponibles = gradium_client.lister_voix_disponibles(langue if langue != Language.AUTO else Language.FRENCH)
-        
-        # Dictionnaire avec nom → {id, nom_prononce}
-        voix_options = {}
-        for v in voix_disponibles:
-            nom_voix = v['name']
-            # Extraire le prénom de la voix
-            if ' - ' in nom_voix:
-                prenom_voix = nom_voix.split(' - ')[0].replace('⭐ ', '').strip()
-            else:
-                prenom_voix = nom_voix.split()[0].replace('⭐ ', '').strip()
-            voix_options[nom_voix] = {'id': v['id'], 'prenom': prenom_voix}
-        
-        # Valeurs par défaut (première voix = voix native recommandée)
-        voix_selectionnee_nom = list(voix_options.keys())[0]
-        voix_selectionnee = voix_options[voix_selectionnee_nom]['id']
-        voix_nom = voix_options[voix_selectionnee_nom]['prenom']
-        
-        with st.expander("🎙️ Changer de voix"):
-            voix_selectionnee_nom = st.selectbox(
-                label="Voix disponibles pour cette langue",
-                options=list(voix_options.keys()),
-                index=0
-            )
-            voix_selectionnee = voix_options[voix_selectionnee_nom]['id']
-            voix_nom = voix_options[voix_selectionnee_nom]['prenom']
+        genre_voix = st.radio(
+            label="Genre de la voix",
+            options=["Femme", "Homme"],
+            index=0,
+            horizontal=True
+        )
     
-    return langue, ton_script, voix_selectionnee, vitesse_lecture, voix_nom
+    return langue, ton_script, genre_voix, vitesse_lecture
 
 
 def verifier_configuration() -> bool:
@@ -291,9 +269,8 @@ def executer_generation(
     description_trigger: str,
     langue: Language,
     ton_script: str,
-    voix_selectionnee: str,
-    vitesse_lecture: float,
-    voix_nom: str = "Brahim"
+    genre_voix: str,
+    vitesse_lecture: float
 ):
     """
     Exécute le cas d'utilisation de génération de cold call.
@@ -305,9 +282,8 @@ def executer_generation(
         description_trigger: Description du trigger
         langue: Langue sélectionnée
         ton_script: Ton du script
-        voix_selectionnee: Voix sélectionnée
+        genre_voix: Genre de la voix (Femme/Homme)
         vitesse_lecture: Vitesse de lecture
-        voix_nom: Nom de la personne qui appelle (selon la voix choisie)
     """
     try:
         with st.spinner("🔄 Génération en cours..."):
@@ -344,9 +320,8 @@ def executer_generation(
                 description_trigger=description_trigger,
                 langue=langue,
                 ton_script=ton_script,
-                voix_selectionnee=voix_selectionnee,
-                vitesse_lecture=vitesse_lecture,
-                nom_appelant=voix_nom
+                genre_voix=genre_voix,
+                vitesse_lecture=vitesse_lecture
             )
             
             # Stockage dans la session
@@ -552,7 +527,7 @@ def main():
     # Formulaire principal
     nom_prospect, nom_entreprise = afficher_formulaire_prospect()
     type_trigger, description_trigger = afficher_formulaire_trigger()
-    langue, ton_script, voix_selectionnee, vitesse_lecture, voix_nom = afficher_options_generation()
+    langue, ton_script, genre_voix, vitesse_lecture = afficher_options_generation()
     
     # Bouton de génération
     st.markdown("---")
@@ -572,9 +547,8 @@ def main():
             description_trigger=description_trigger,
             langue=langue,
             ton_script=ton_script,
-            voix_selectionnee=voix_selectionnee,
-            vitesse_lecture=vitesse_lecture,
-            voix_nom=voix_nom
+            genre_voix=genre_voix,
+            vitesse_lecture=vitesse_lecture
         )
     
     if not formulaire_valide:

@@ -55,9 +55,8 @@ class GenerateVoiceOutbound:
         description_trigger: str,
         langue: Language = Language.FRENCH,
         ton_script: str = "professionnel",
-        voix_selectionnee: str = "default",
-        vitesse_lecture: float = 1.0,
-        nom_appelant: str = "Brahim"
+        genre_voix: str = "Femme",
+        vitesse_lecture: float = 1.0
     ) -> dict:
         """
         Exécute le cas d'utilisation complet de génération de cold call.
@@ -69,9 +68,8 @@ class GenerateVoiceOutbound:
             description_trigger: Description détaillée du trigger
             langue: Langue souhaitée pour le script et l'audio
             ton_script: Ton du script (professionnel, décontracté, etc.)
-            voix_selectionnee: Identifiant de la voix à utiliser
+            genre_voix: Genre de la voix (Femme/Homme)
             vitesse_lecture: Vitesse de lecture de l'audio
-            nom_appelant: Nom de la personne qui appelle (selon la voix)
             
         Returns:
             Dictionnaire contenant le prospect, le script, l'audio et les métadonnées
@@ -101,12 +99,6 @@ class GenerateVoiceOutbound:
         )
         
         # Étape 3 : Générer le script personnalisé
-        # Modifier temporairement le nom de l'appelant dans la config
-        from infrastructure.config import obtenir_configuration
-        config = obtenir_configuration()
-        nom_original = config.utilisateur_nom
-        config.utilisateur_nom = nom_appelant
-        
         script = self.fournisseur_llm.generer_script_cold_call(
             prospect=prospect,
             trigger=trigger,
@@ -114,14 +106,15 @@ class GenerateVoiceOutbound:
             ton=ton_script
         )
         
-        # Restaurer le nom original
-        config.utilisateur_nom = nom_original
+        # Étape 4 : Choisir la voix automatiquement selon langue et genre
+        voix_id = self.fournisseur_voix.get_voix_par_langue_et_genre(langue_finale, genre_voix)
+        print(f"🎙️ Voix sélectionnée: {voix_id} ({genre_voix}, {langue_finale.value})")
         
-        # Étape 4 : Synthétiser la voix
+        # Étape 5 : Synthétiser la voix
         audio = self.fournisseur_voix.synthetiser_voix(
             texte=self._assembler_script_complet(script),
             langue=langue_finale,
-            voix=voix_selectionnee,
+            voix=voix_id,
             vitesse=vitesse_lecture
         )
         

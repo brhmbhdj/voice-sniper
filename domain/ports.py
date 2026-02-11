@@ -164,13 +164,26 @@ class VoiceProvider(ABC):
     @abstractmethod
     def lister_voix_disponibles(self, langue: Language) -> list[dict]:
         """
-        Sauvegarde l'audio généré dans un fichier.
+        Liste les voix disponibles pour une langue.
         
         Args:
-            audio_output: Objet audio à sauvegarder
-            chemin_sortie: Chemin du fichier de sortie
+            langue: Langue souhaitée
             
         Returns:
-            Chemin complet du fichier sauvegardé
+            Liste des voix disponibles
+        """
+        pass
+    
+    @abstractmethod
+    def get_voix_par_langue_et_genre(self, langue: Language, genre: str) -> str:
+        """
+        Retourne une voix appropriée selon la langue et le genre.
+        
+        Args:
+            langue: Langue du script
+            genre: Genre de la voix (Femme/Homme)
+            
+        Returns:
+            ID de la voix
         """
         pass
