@@ -267,35 +267,6 @@ class GeminiClient(LLMProvider):
         
         # Par défaut: Français (car Gradium est FR)
         return Language.FRENCH
-            
-            reponse = modele.generate_content(
-                contexte,
-                generation_config={"temperature": 0.1, "max_output_tokens": 10}
-            )
-            
-            # Extraction du code langue
-            texte_reponse = reponse.text.strip().lower()
-            
-            # Mapping des codes vers l'enum
-            mapping_langues = {
-                "fr": Language.FRENCH,
-                "en": Language.ENGLISH,
-                "es": Language.SPANISH,
-                "de": Language.GERMAN,
-                "it": Language.ITALIAN
-            }
-            
-            # Cherche le code dans la réponse
-            for code, langue in mapping_langues.items():
-                if code in texte_reponse:
-                    return langue
-            
-            # Détection par défaut basée sur l'entreprise
-            return self._detecter_langue_par_defaut(prospect)
-            
-        except Exception:
-            # En cas d'erreur, utiliser la détection par défaut
-            return self._detecter_langue_par_defaut(prospect)
 
     def _detecter_langue_par_defaut(self, prospect: Prospect) -> Language:
         """
