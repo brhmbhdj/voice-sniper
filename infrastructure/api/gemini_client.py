@@ -240,51 +240,33 @@ class GeminiClient(LLMProvider):
     def detecter_langue_ideale(self, prospect: Prospect) -> Language:
         """
         Détecte la langue idéale pour contacter un prospect.
-        Utilise Gemini pour analyser les indices (entreprise, secteur, notes)
-        et déterminer la meilleure langue pour le cold call.
-        
-        Args:
-            prospect: Informations du prospect
-            
-        Returns:
-            Langue recommandée (FRENCH, ENGLISH, etc.)
+        Par défaut: Français (car Gradium est une startup française)
         """
-        try:
-            modele = self._get_model()
-            
-            # Construction du contexte pour l'analyse
-            contexte = f"""
-            Analyse ce prospect et détermine la langue la plus appropriée pour un cold call professionnel.
-            
-            INFORMATIONS DU PROSPECT :
-            - Nom : {prospect.nom_complet}
-            - Entreprise : {prospect.entreprise}
-            - Secteur : {prospect.secteur_activite or "Non spécifié"}
-            """
-            
-            # Ajout des notes enrichies si disponibles
-            if prospect.notes_enrichies and prospect.notes_enrichies.notes_brutes:
-                contexte += f"\n- Notes : {prospect.notes_enrichies.notes_brutes[:500]}"
-            
-            contexte += """
-            
-            INSTRUCTIONS :
-            Réponds UNIQUEMENT avec le code langue ISO à 2 lettres parmi :
-            - "fr" pour français
-            - "en" pour anglais  
-            - "es" pour espagnol
-            - "de" pour allemand
-            - "it" pour italien
-            
-            Règles de décision :
-            - Entreprise française ou nom français → "fr"
-            - Entreprise internationale/tech/saas → "en" 
-            - Entreprise allemande → "de"
-            - Indices géographiques dans les notes
-            - Langue des notes si rédigées en français/anglais
-            
-            Réponds uniquement avec le code (ex: "fr" ou "en").
-            """
+        # Règles simples avant d'appeler l'API
+        nom_lower = prospect.nom_complet.lower() if prospect.nom_complet else ""
+        entreprise_lower = prospect.entreprise.lower() if prospect.entreprise else ""
+        notes_lower = prospect.notes_enrichies.notes_brutes.lower() if prospect.notes_enrichies and prospect.notes_enrichies.notes_brutes else ""
+        
+        # Noms typiquement français
+        prenoms_fr = ['marie', 'jean', 'pierre', 'constance', 'marine', 'sophie', 'julien', 'thomas', 'nicolas', 'alexandre', 'brahim']
+        for prenom in prenoms_fr:
+            if prenom in nom_lower:
+                return Language.FRENCH
+        
+        # Indices dans les notes
+        mots_fr = ['france', 'paris', 'lyon', 'marseille', 'euros', 'levee', 'fonds', 'startup francaise', 'francaise']
+        for mot in mots_fr:
+            if mot in notes_lower or mot in entreprise_lower:
+                return Language.FRENCH
+        
+        # Mots anglais
+        mots_en = ['inc', 'llc', 'corp', 'ltd', 'uk', 'usa', 'america', 'london', 'new york', 'san francisco']
+        for mot in mots_en:
+            if mot in notes_lower or mot in entreprise_lower:
+                return Language.ENGLISH
+        
+        # Par défaut: Français (car Gradium est FR)
+        return Language.FRENCH
             
             reponse = modele.generate_content(
                 contexte,
@@ -489,11 +471,23 @@ SÉPARATION STRICTE ENTRE CHAQUE SECTION AVEC UNE LIGNE VIDE.
    → Mentionne 1-2 détails spécifiques des notes
    → STOP - LIGNE VIDE OBLIGATOIRE APRÈS
 
-3. PROPOSITION DE VALEUR (15-20s)
-   → Évite "With that kind of..." ou phrases génériques
-   → Donne une proposition CONCRÈTE et CHIFFRÉE si possible
-   → Exemple : "We help companies like [Entreprise] reduce ramp-up time by 40% through automated signal detection..."
-   → Explique COMMENT tu résous le problème
+3. PROPOSITION DE VALEUR (15-20s) - SOIS PERSUASIF ET VENDEUR
+   → STRUCTURE OBLIGATOIRE :
+     • HOOK : Accroche immédiate avec un chiffre ou résultat concret (ex: "Nos clients réduisent leur cycle de vente de 30% en 3 mois")
+     • PROBLÈME : Reformule le pain point du prospect en une phrase percutante
+     • SOLUTION : Explique EXACTEMENT comment Gradium résout ce problème (IA voix + automatisation)
+     • DIFFÉRENCIATION : Pourquoi Gradium et pas la concurrence ? (technologie propriétaire, 10x plus rapide)
+     • PREUVE : Mentionne un résultat client ou un élément crédible
+   
+   → EXEMPLES DE PROPOSITIONS PERCUTANTES :
+     EN ANGLAIS : "We helped similar AI startups cut their BDR onboarding from 3 months to 2 weeks. Our voice AI handles 80% of initial outreach, letting your team focus on closing. That's not just efficiency—it's 10x ROI in quarter one."
+     EN FRANÇAIS : "Nous avons aidé des startups similaires à réduire l'onboarding de leurs BDR de 3 mois à 2 semaines. Notre IA vocale gère 80% du premier contact, permettant à votre équipe de se concentrer sur la signature. Ce n'est pas juste de l'efficacité—c'est un ROI 10x dès le premier trimestre."
+   
+   → INTERDICTIONS :
+     • PAS de phrases génériques comme "We can help you achieve better results"
+     • PAS de "With that kind of..."
+     • PAS de jargon technique sans explication
+   
    → STOP - LIGNE VIDE OBLIGATOIRE APRÈS
 
 4. GESTION D'OBJECTION (10-15s)

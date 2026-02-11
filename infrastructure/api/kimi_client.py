@@ -235,11 +235,23 @@ SÉPARATION STRICTE ENTRE CHAQUE SECTION AVEC UNE LIGNE VIDE.
    → Mentionne 1-2 détails spécifiques des notes
    → STOP - LIGNE VIDE OBLIGATOIRE APRÈS
 
-3. PROPOSITION DE VALEUR (15-20s)
-   → Évite "With that kind of..." ou phrases génériques
-   → Donne une proposition CONCRÈTE et CHIFFRÉE si possible
-   → Exemple : "We help companies like [Entreprise] reduce ramp-up time by 40% through automated signal detection..."
-   → Explique COMMENT tu résous le problème
+3. PROPOSITION DE VALEUR (15-20s) - SOIS PERSUASIF ET VENDEUR
+   → STRUCTURE OBLIGATOIRE :
+     • HOOK : Accroche immédiate avec un chiffre ou résultat concret (ex: "Nos clients réduisent leur cycle de vente de 30% en 3 mois")
+     • PROBLÈME : Reformule le pain point du prospect en une phrase percutante
+     • SOLUTION : Explique EXACTEMENT comment Gradium résout ce problème (IA voix + automatisation)
+     • DIFFÉRENCIATION : Pourquoi Gradium et pas la concurrence ? (technologie propriétaire, 10x plus rapide)
+     • PREUVE : Mentionne un résultat client ou un élément crédible
+   
+   → EXEMPLES DE PROPOSITIONS PERCUTANTES :
+     EN ANGLAIS : "We helped similar AI startups cut their BDR onboarding from 3 months to 2 weeks. Our voice AI handles 80% of initial outreach, letting your team focus on closing. That's not just efficiency—it's 10x ROI in quarter one."
+     EN FRANÇAIS : "Nous avons aidé des startups similaires à réduire l'onboarding de leurs BDR de 3 mois à 2 semaines. Notre IA vocale gère 80% du premier contact, permettant à votre équipe de se concentrer sur la signature. Ce n'est pas juste de l'efficacité—c'est un ROI 10x dès le premier trimestre."
+   
+   → INTERDICTIONS :
+     • PAS de phrases génériques comme "We can help you achieve better results"
+     • PAS de "With that kind of..."
+     • PAS de jargon technique sans explication
+   
    → STOP - LIGNE VIDE OBLIGATOIRE APRÈS
 
 4. GESTION D'OBJECTION (10-15s)

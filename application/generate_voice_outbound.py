@@ -56,7 +56,8 @@ class GenerateVoiceOutbound:
         langue: Language = Language.FRENCH,
         ton_script: str = "professionnel",
         voix_selectionnee: str = "default",
-        vitesse_lecture: float = 1.0
+        vitesse_lecture: float = 1.0,
+        nom_appelant: str = "Brahim"
     ) -> dict:
         """
         Exécute le cas d'utilisation complet de génération de cold call.
@@ -70,6 +71,7 @@ class GenerateVoiceOutbound:
             ton_script: Ton du script (professionnel, décontracté, etc.)
             voix_selectionnee: Identifiant de la voix à utiliser
             vitesse_lecture: Vitesse de lecture de l'audio
+            nom_appelant: Nom de la personne qui appelle (selon la voix)
             
         Returns:
             Dictionnaire contenant le prospect, le script, l'audio et les métadonnées
@@ -99,12 +101,21 @@ class GenerateVoiceOutbound:
         )
         
         # Étape 3 : Générer le script personnalisé
+        # Modifier temporairement le nom de l'appelant dans la config
+        from infrastructure.config import obtenir_configuration
+        config = obtenir_configuration()
+        nom_original = config.utilisateur_nom
+        config.utilisateur_nom = nom_appelant
+        
         script = self.fournisseur_llm.generer_script_cold_call(
             prospect=prospect,
             trigger=trigger,
             langue=langue_finale,
             ton=ton_script
         )
+        
+        # Restaurer le nom original
+        config.utilisateur_nom = nom_original
         
         # Étape 4 : Synthétiser la voix
         audio = self.fournisseur_voix.synthetiser_voix(

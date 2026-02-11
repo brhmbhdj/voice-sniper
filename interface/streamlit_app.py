@@ -210,21 +210,30 @@ def afficher_options_generation():
         
         # Option avancée pour changer de voix (optionnel)
         voix_selectionnee = "cNKK8o0PXiqK6BZT"  # Default: Brahim
+        voix_nom = "Brahim"  # Default nom
         
         with st.expander("🎙️ Changer de voix (optionnel)"):
             from infrastructure.api.gradium_client import GradiumClient
             gradium_client = GradiumClient()
             voix_disponibles = gradium_client.lister_voix_disponibles(langue if langue != Language.AUTO else Language.FRENCH)
             
-            voix_options = {f"{v['name']}": v['id'] for v in voix_disponibles}
+            # Dictionnaire avec nom → {id, nom_prononce}
+            voix_options = {}
+            for v in voix_disponibles:
+                nom_voix = v['name']
+                # Extraire le prénom de la voix (ex: "⭐ Brahim - Ma Voix (FR)" → "Brahim")
+                prenom_voix = nom_voix.split(' - ')[0].replace('⭐ ', '').strip()
+                voix_options[nom_voix] = {'id': v['id'], 'prenom': prenom_voix}
+            
             voix_selectionnee_nom = st.selectbox(
                 label="Voix disponibles",
                 options=list(voix_options.keys()),
                 index=0
             )
-            voix_selectionnee = voix_options[voix_selectionnee_nom]
+            voix_selectionnee = voix_options[voix_selectionnee_nom]['id']
+            voix_nom = voix_options[voix_selectionnee_nom]['prenom']
     
-    return langue, ton_script, voix_selectionnee, vitesse_lecture
+    return langue, ton_script, voix_selectionnee, vitesse_lecture, voix_nom
 
 
 def verifier_configuration() -> bool:
@@ -279,7 +288,8 @@ def executer_generation(
     langue: Language,
     ton_script: str,
     voix_selectionnee: str,
-    vitesse_lecture: float
+    vitesse_lecture: float,
+    voix_nom: str = "Brahim"
 ):
     """
     Exécute le cas d'utilisation de génération de cold call.
@@ -293,6 +303,7 @@ def executer_generation(
         ton_script: Ton du script
         voix_selectionnee: Voix sélectionnée
         vitesse_lecture: Vitesse de lecture
+        voix_nom: Nom de la personne qui appelle (selon la voix choisie)
     """
     try:
         with st.spinner("🔄 Génération en cours..."):
@@ -330,7 +341,8 @@ def executer_generation(
                 langue=langue,
                 ton_script=ton_script,
                 voix_selectionnee=voix_selectionnee,
-                vitesse_lecture=vitesse_lecture
+                vitesse_lecture=vitesse_lecture,
+                nom_appelant=voix_nom
             )
             
             # Stockage dans la session
@@ -528,7 +540,7 @@ def main():
     # Formulaire principal
     nom_prospect, nom_entreprise = afficher_formulaire_prospect()
     type_trigger, description_trigger = afficher_formulaire_trigger()
-    langue, ton_script, voix_selectionnee, vitesse_lecture = afficher_options_generation()
+    langue, ton_script, voix_selectionnee, vitesse_lecture, voix_nom = afficher_options_generation()
     
     # Bouton de génération
     st.markdown("---")
@@ -549,7 +561,8 @@ def main():
             langue=langue,
             ton_script=ton_script,
             voix_selectionnee=voix_selectionnee,
-            vitesse_lecture=vitesse_lecture
+            vitesse_lecture=vitesse_lecture,
+            voix_nom=voix_nom
         )
     
     if not formulaire_valide:
