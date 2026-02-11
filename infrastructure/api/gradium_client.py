@@ -76,7 +76,7 @@ class GradiumClient(VoiceProvider):
         Args:
             texte: Texte à synthétiser
             langue: Langue du texte
-            voix: Identifiant de la voix Gradium (ex: Brahim, Elise, Leo)
+            voix: Identifiant de la voix Gradium (IDs: Claire=zIGaffB0kKEBG_8u, Leo=axlOaUiFyOZhy4nv, Emma=YTpq7expH9539ERJ, Kent=LFZvm12tW_z0xfGo)
             vitesse: Vitesse de lecture (1.0 = normal)
             
         Returns:
@@ -188,25 +188,19 @@ class GradiumClient(VoiceProvider):
     def lister_voix_disponibles(self, langue: Language) -> list[dict]:
         """
         Liste les voix Gradium disponibles selon la langue.
-        Retourne les voix natives de Gradium + Brahim en option.
+        Retourne uniquement les voix natives de Gradium.
         """
-        voix_brahim_id = "cNKK8o0PXiqK6BZT"
         code_langue = self._mapper_langue(langue) if langue != Language.AUTO else "fr"
         
-        # 🎙️ VOIX NATIVES GRADIUM par langue
+        # 🎙️ VOIX NATIVES GRADIUM par langue (vrais IDs)
         voix_francaises = [
-            {"id": "Elise", "name": "Elise - Français Féminin", "language": "fr", "gender": "female"},
-            {"id": "Denise", "name": "Denise - Français Féminin", "language": "fr", "gender": "female"},
-            {"id": "Henri", "name": "Henri - Français Masculin", "language": "fr", "gender": "male"},
-            {"id": voix_brahim_id, "name": "⭐ Brahim (Voix Clonée - Accent Anglophone)", "language": "fr", "gender": "male", "custom": True},
+            {"id": "zIGaffB0kKEBG_8u", "name": "Claire - Français Féminin", "language": "fr", "gender": "female"},
+            {"id": "axlOaUiFyOZhy4nv", "name": "Leo - Français Masculin", "language": "fr", "gender": "male"},
         ]
         
         voix_anglaises = [
-            {"id": "Emma", "name": "Emma - Anglais US Féminin", "language": "en", "country": "us", "gender": "female"},
-            {"id": "Alice", "name": "Alice - Anglais UK Féminin", "language": "en", "country": "gb", "gender": "female"},
-            {"id": "Harry", "name": "Harry - Anglais UK Masculin", "language": "en", "country": "gb", "gender": "male"},
-            {"id": "Kent", "name": "Kent - Anglais US Masculin", "language": "en", "country": "us", "gender": "male"},
-            {"id": voix_brahim_id, "name": "⭐ Brahim (Voix Clonée)", "language": "en", "gender": "male", "custom": True},
+            {"id": "YTpq7expH9539ERJ", "name": "Emma - Anglais UK Féminin", "language": "en", "country": "gb", "gender": "female"},
+            {"id": "LFZvm12tW_z0xfGo", "name": "Kent - Anglais UK Masculin", "language": "en", "country": "gb", "gender": "male"},
         ]
         
         # Retourner les voix selon la langue demandée
@@ -215,7 +209,7 @@ class GradiumClient(VoiceProvider):
         elif code_langue == "en":
             return voix_anglaises
         elif code_langue in ["es", "de", "it"]:
-            # Pour les autres langues, retourner les voix anglaises + Brahim
+            # Pour les autres langues, retourner les voix anglaises
             return voix_anglaises
         else:
             # Par défaut, retourner les voix françaises
@@ -228,9 +222,9 @@ class GradiumClient(VoiceProvider):
         code_langue = self._mapper_langue(langue) if langue != Language.AUTO else "fr"
         
         if code_langue == "fr":
-            return "Elise"  # Voix française féminine par défaut
+            return "zIGaffB0kKEBG_8u"  # Claire - Voix française féminine
         else:
-            return "Emma"   # Voix anglaise féminine par défaut
+            return "YTpq7expH9539ERJ"  # Emma - Voix anglaise féminine
     
     def get_voix_par_langue_et_genre(self, langue: Language, genre: str) -> str:
         """
@@ -246,39 +240,40 @@ class GradiumClient(VoiceProvider):
         code_langue = self._mapper_langue(langue) if langue != Language.AUTO else "fr"
         genre_lower = genre.lower().strip()
         
-        # Mapping des voix par langue et genre
+        # Mapping des voix par langue et genre (vrais IDs)
         voix_mapping = {
             "fr": {
-                "femme": "Elise",
-                "homme": "Henri"
+                "femme": "zIGaffB0kKEBG_8u",  # Claire
+                "homme": "axlOaUiFyOZhy4nv"   # Leo
             },
             "en": {
-                "femme": "Emma",
-                "homme": "Kent"
+                "femme": "YTpq7expH9539ERJ",  # Emma
+                "homme": "LFZvm12tW_z0xfGo"   # Kent
             },
             "es": {
-                "femme": "Emma",  # Fallback sur anglais si pas d'espagnol
-                "homme": "Kent"
+                "femme": "YTpq7expH9539ERJ",  # Emma (fallback)
+                "homme": "LFZvm12tW_z0xfGo"   # Kent
             },
             "de": {
-                "femme": "Emma",
-                "homme": "Kent"
+                "femme": "YTpq7expH9539ERJ",  # Emma (fallback)
+                "homme": "LFZvm12tW_z0xfGo"   # Kent
             },
             "it": {
-                "femme": "Emma",
-                "homme": "Kent"
+                "femme": "YTpq7expH9539ERJ",  # Emma (fallback)
+                "homme": "LFZvm12tW_z0xfGo"   # Kent
             }
         }
         
         # Retourner la voix appropriée ou une valeur par défaut
         if code_langue in voix_mapping and genre_lower in voix_mapping[code_langue]:
-            return voix_mapping[code_langue][genre_lower]
+            voix_choisie = voix_mapping[code_langue][genre_lower]
+            return voix_choisie
         
         # Fallback
         if code_langue == "fr":
-            return "Elise"
+            return "zIGaffB0kKEBG_8u"  # Claire
         else:
-            return "Emma"
+            return "YTpq7expH9539ERJ"  # Emma
 
     def _mapper_langue(self, langue: Language) -> str:
         """Mappe l'enum Language vers le code Gradium."""

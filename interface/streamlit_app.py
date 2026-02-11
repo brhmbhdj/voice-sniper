@@ -406,6 +406,10 @@ def afficher_resultat():
     st.markdown("---")
     st.header("🔊 Audio Généré")
     
+    # 🎙️ INFO VOIX UTILISÉE
+    voix_utilisee = resultat.get("voix_id", "Inconnue")
+    st.info(f"🎙️ Voix utilisée: **{voix_utilisee}**")
+    
     # Sauvegarde temporaire du fichier audio pour lecture
     format_fichier = audio.format_fichier.lower()
     nom_fichier = f"cold_call_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{format_fichier}"

@@ -1,25 +1,67 @@
 """
 Configuration de l'application avec validation Pydantic.
-Gère les variables d'environnement et les paramètres de l'application.
+Gère les variables d'environnement, le fichier .env, et les secrets Streamlit Cloud.
 """
 
+import os
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def get_streamlit_secrets():
+    """Récupère les secrets depuis Streamlit Cloud (st.secrets) si disponible."""
+    try:
+        import streamlit as st
+        # Si on est dans un environnement Streamlit, st.secrets existe
+        if hasattr(st, 'secrets'):
+            return dict(st.secrets)
+    except Exception:
+        pass
+    return {}
+
+
+def get_settings_values():
+    """Combine les sources de configuration (env vars, .env, st.secrets)."""
+    values = {}
+    
+    # 1. Streamlit Cloud secrets (priorité max sur le cloud)
+    streamlit_secrets = get_streamlit_secrets()
+    if streamlit_secrets:
+        # Mapping des noms de secrets Streamlit vers les noms de config
+        mapping = {
+            'GEMINI_CLE_API': 'gemini_cle_api',
+            'GEMINI_MODELE': 'gemini_modele',
+            'KIMI_CLE_API': 'kimi_cle_api',
+            'KIMI_MODELE': 'kimi_modele',
+            'NOTION_CLE_API': 'notion_cle_api',
+            'NOTION_DATABASE_ID': 'notion_database_id',
+            'HUNTER_CLE_API': 'hunter_cle_api',
+            'GRADIUM_CLE_API': 'gradium_cle_api',
+            'GRADIUM_URL_API': 'gradium_url_api',
+            'LLM_PROVIDER': 'llm_provider',
+        }
+        for env_key, config_key in mapping.items():
+            if env_key in streamlit_secrets:
+                values[config_key] = streamlit_secrets[env_key]
+    
+    return values
 
 
 class Settings(BaseSettings):
     """
     Configuration centralisée de l'application Voice Sniper.
     
-    Les valeurs sont chargées depuis les variables d'environnement
-    ou depuis un fichier .env situé à la racine du projet.
+    Priorité des sources :
+    1. Streamlit Cloud secrets (st.secrets) - si sur Streamlit Cloud
+    2. Variables d'environnement
+    3. Fichier .env local
     """
     
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
-        extra="ignore",  # Ignore les variables d'env non définies ici
-        env_file_override=True  # Force le rechargement du .env
+        extra="ignore",
+        env_file_override=True
     )
     
     # Configuration générale
@@ -55,7 +97,7 @@ class Settings(BaseSettings):
     # Configuration Gemini (Google AI)
     gemini_cle_api: str = Field(default="", description="Clé API Gemini")
     gemini_modele: str = Field(
-        default="gemini-2.5-pro-preview-03-25",  # Gemini 2.5 Pro
+        default="gemini-2.5-flash",  # Modèle par défaut (rapide, bon quotas)
         description="Modèle Gemini à utiliser"
     )
     
@@ -117,7 +159,9 @@ class Settings(BaseSettings):
 
 
 # Instance singleton de la configuration
-configuration = Settings()
+# On charge les secrets Streamlit dès le départ s'ils existent
+_streamlit_values = get_settings_values()
+configuration = Settings(**_streamlit_values) if _streamlit_values else Settings()
 
 
 def obtenir_configuration() -> Settings:
@@ -126,5 +170,11 @@ def obtenir_configuration() -> Settings:
     
     Returns:
         Instance Settings avec les valeurs chargées
+        (depuis .env local ou Streamlit Cloud secrets)
     """
+    global configuration
+    # Recharger les secrets Streamlit à chaque appel (pour les mises à jour)
+    _values = get_settings_values()
+    if _values:
+        configuration = Settings(**_values)
     return configuration

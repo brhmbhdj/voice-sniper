@@ -1,7 +1,7 @@
 """
-Client pour l'API Gemini (Google AI) avec découverte dynamique des modèles.
+Client pour l'API Gemini (Google AI).
 Implémente le port LLMProvider défini dans le domaine.
-Utilise le pattern "Dynamic Discovery" pour éviter les erreurs 404.
+Le modèle est lu directement depuis GEMINI_MODELE dans le fichier .env.
 """
 
 import re
@@ -17,7 +17,7 @@ from infrastructure.config import obtenir_configuration
 class GeminiClient(LLMProvider):
     """
     Adaptateur pour le modèle de langage Gemini de Google.
-    Implémente une découverte dynamique des modèles pour éviter les erreurs 404.
+    Utilise le modèle spécifié dans GEMINI_MODELE (fichier .env).
     """
 
     def __init__(
@@ -54,153 +54,35 @@ class GeminiClient(LLMProvider):
 
     def _get_model(self) -> genai.GenerativeModel:
         """
-        Lazy loading du modèle Gemini avec découverte dynamique.
-        Si le modèle n'est pas encore initialisé, tente de le découvrir automatiquement.
+        Initialise le modèle Gemini depuis la config (.env).
+        Utilise directement GEMINI_MODELE sans fallback.
         
         Returns:
             Instance de GenerativeModel prête à l'emploi
-            
-        Raises:
-            Exception: Si aucun modèle ne peut être trouvé
         """
         # Si déjà initialisé, retourne le modèle en cache
         if self._modele is not None:
             return self._modele
         
-        print(f"🤖 Initialisation dynamique du modèle Gemini...")
-        print(f"   Préférence utilisateur : {self.nom_modele_preference}")
+        # Recharger la config à chaque fois pour prendre en compte les modifications du .env
+        from infrastructure.config import obtenir_configuration
+        config = obtenir_configuration()
+        nom_modele = self.nom_modele_preference or config.gemini_modele
         
-        # Étape 1 : Essayer le modèle préféré (s'il est spécifié)
-        if self.nom_modele_preference:
-            try:
-                print(f"   Tentative avec : {self.nom_modele_preference}")
-                modele = genai.GenerativeModel(self.nom_modele_preference)
-                # Test rapide pour vérifier que le modèle existe
-                modele._model_id  # Accède à l'ID pour valider
-                self._modele = modele
-                self._nom_modele_effectif = self.nom_modele_preference
-                print(f"✅ Modèle '{self._nom_modele_effectif}' chargé avec succès")
-                return self._modele
-            except Exception as erreur:
-                erreur_msg = str(erreur)
-                if "429" in erreur_msg or "quota" in erreur_msg.lower():
-                    print(f"   ⚠️  Quota dépassé pour '{self.nom_modele_preference}' - passage au modèle suivant")
-                else:
-                    print(f"   ⚠️  Échec avec '{self.nom_modele_preference}' : {erreur_msg[:100]}")
+        print(f"🤖 Modèle Gemini (depuis .env): {nom_modele}")
         
-        # Étape 2 : Liste des noms à tester (ordre de préférence)
-        candidats_a_tester = [
-            "gemini-2.5-pro-preview-03-25",
-            "gemini-2.5-pro",
-            "gemini-2.5-flash",
-            "gemini-1.5-flash-latest",
-            "gemini-1.5-flash",
-            "gemini-1.5-pro-latest",
-            "gemini-1.5-pro",
-            "gemini-1.0-pro-latest",
-        ]
-        
-        for nom_candidat in candidats_a_tester:
-            if nom_candidat == self.nom_modele_preference:
-                continue  # Déjà testé ci-dessus
-            try:
-                print(f"   Tentative avec : {nom_candidat}")
-                modele = genai.GenerativeModel(nom_candidat)
-                modele._model_id  # Validation
-                self._modele = modele
-                self._nom_modele_effectif = nom_candidat
-                print(f"✅ Modèle '{self._nom_modele_effectif}' chargé avec succès")
-                return self._modele
-            except Exception as e:
-                if "429" in str(e) or "quota" in str(e).lower():
-                    print(f"   ⚠️  Quota dépassé pour '{nom_candidat}' - essai suivant")
-                continue  # Essayer le suivant
-        
-        # Étape 3 : Découverte dynamique via l'API
-        print(f"   🔍 Découverte dynamique via list_models()...")
         try:
-            modele_trouve = self._decouvrir_modele_dynamiquement()
-            if modele_trouve:
-                self._modele = modele_trouve
-                print(f"✅ Modèle découvert dynamiquement : '{self._nom_modele_effectif}'")
-                return self._modele
+            modele = genai.GenerativeModel(nom_modele)
+            self._modele = modele
+            self._nom_modele_effectif = nom_modele
+            print(f"✅ Modèle chargé: {nom_modele}")
+            return self._modele
         except Exception as erreur:
-            print(f"   ❌ Échec de la découverte dynamique : {str(erreur)}")
-        
-        # Étape 4 : Échec complet
-        raise Exception(
-            "Impossible d'initialiser un modèle Gemini. "
-            "Vérifiez votre clé API et les permissions du projet."
-        )
-
-    def _decouvrir_modele_dynamiquement(self) -> Optional[genai.GenerativeModel]:
-        """
-        Découvre automatiquement un modèle disponible via l'API Gemini.
-        
-        Stratégie de sélection :
-        1. Prendre le premier modèle contenant "flash" (rapide et économique)
-        2. Sinon prendre le premier contenant "pro" (plus puissant)
-        3. Sinon prendre n'importe quel modèle Gemini disponible
-        
-        Returns:
-            GenerativeModel initialisé ou None si échec
-        """
-        try:
-            # Liste tous les modèles disponibles
-            modeles_disponibles = list(genai.list_models())
-            
-            if not modeles_disponibles:
-                raise Exception("Aucun modèle trouvé dans la liste")
-            
-            # Filtrer uniquement les modèles de génération (pas les embeddings)
-            modeles_generatifs = [
-                m for m in modeles_disponibles 
-                if hasattr(m, 'name') and 'embed' not in m.name.lower()
-            ]
-            
-            print(f"   📋 {len(modeles_generatifs)} modèle(s) génératif(s) trouvé(s)")
-            
-            # Affiche les modèles trouvés pour debug
-            for m in modeles_generatifs[:5]:
-                print(f"      - {m.name}")
-            
-            # Stratégie de sélection par priorité
-            modele_choisi = None
-            
-            # Priorité 1 : Pro 2.5 (le plus récent et puissant)
-            for m in modeles_generatifs:
-                if '2.5-pro' in m.name.lower():
-                    modele_choisi = m.name
-                    break
-            
-            # Priorité 2 : Pro (puissant)
-            if not modele_choisi:
-                for m in modeles_generatifs:
-                    if 'pro' in m.name.lower():
-                        modele_choisi = m.name
-                        break
-            
-            # Priorité 3 : Flash (rapide, économique)
-            if not modele_choisi:
-                for m in modeles_generatifs:
-                    if 'flash' in m.name.lower():
-                        modele_choisi = m.name
-                        break
-            
-            # Priorité 3 : N'importe quel modèle Gemini
-            if not modele_choisi and modeles_generatifs:
-                modele_choisi = modeles_generatifs[0].name
-            
-            if modele_choisi:
-                self._nom_modele_effectif = modele_choisi
-                print(f"   🎯 Modèle sélectionné : {modele_choisi}")
-                return genai.GenerativeModel(modele_choisi)
-            
-            return None
-            
-        except Exception as erreur:
-            print(f"   Erreur lors de la découverte : {str(erreur)}")
-            return None
+            raise Exception(
+                f"❌ Impossible de charger le modèle '{nom_modele}'.\n"
+                f"Erreur: {str(erreur)[:200]}\n"
+                f"Vérifiez GEMINI_MODELE dans votre fichier .env"
+            )
 
     def generer_script_cold_call(
         self,
@@ -264,14 +146,16 @@ class GeminiClient(LLMProvider):
             erreur_str = str(erreur)
             # Détection du quota dépassé (erreur 429)
             if "429" in erreur_str or "quota" in erreur_str.lower() or "exceeded" in erreur_str.lower():
+                config = obtenir_configuration()
+                modele_actuel = config.gemini_modele
                 raise Exception(
-                    "🚫 Quota Gemini dépassé !\n\n"
-                    "Le modèle Gemini 2.5 Pro a atteint sa limite quotidienne.\n"
-                    "Les quotas gratuits se réinitialisent chaque jour.\n\n"
-                    "💡 Solutions :\n"
-                    "• Réessayez demain (les quotas se réinitialisent à minuit UTC)\n"
-                    "• Passez à Kimi (vérifiez LLM_PROVIDER=kimi dans .env)\n"
-                    "• Utilisez Gemini 1.5 Flash (moins de restrictions)"
+                    f"🚫 Quota Gemini dépassé !\n\n"
+                    f"Le modèle '{modele_actuel}' a atteint sa limite quotidienne.\n"
+                    f"Les quotas gratuits se réinitialisent chaque jour.\n\n"
+                    f"💡 Solutions :\n"
+                    f"• Modifiez GEMINI_MODELE dans .env (ex: gemini-1.5-flash-latest)\n"
+                    f"• Passez à Kimi (LLM_PROVIDER=kimi)\n"
+                    f"• Réessayez demain (quotas réinitialisés à minuit UTC)"
                 )
             raise Exception(
                 f"Erreur lors de la génération du script avec Gemini : {erreur_str}"

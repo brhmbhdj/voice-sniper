@@ -130,7 +130,9 @@ class GenerateVoiceOutbound:
             "audio": audio,
             "timestamp": datetime.now().isoformat(),
             "langue": langue_finale.value,
-            "langue_detectee_auto": langue == Language.AUTO
+            "langue_detectee_auto": langue == Language.AUTO,
+            "voix_id": voix_id,
+            "genre_voix": genre_voix
         }
 
     def _recuperer_prospect(self, nom_complet: str, nom_entreprise: str) -> Prospect:
