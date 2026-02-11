@@ -94,6 +94,7 @@ class NotionClient(NotionDataProvider):
         - Statut (select): Discovery/Qualification
         - Notes (rich_text): Contexte détaillé
         - Email (rich_text): Email du prospect
+        - Langue (select): FR, UK, EN, etc.
         """
         proprietes = page.get("properties", {})
         
@@ -138,9 +139,12 @@ class NotionClient(NotionDataProvider):
         taille = extraire_select("Taille")                # Colonne select
         email = extraire_rich_text("Email")               # Colonne rich_text
         notes_brutes = extraire_rich_text("Notes")        # Colonne rich_text
+        langue = extraire_select("Langue")                # Colonne select (FR, UK, EN, etc.)
         
         if notes_brutes:
             print(f"     📝 Notes: {len(notes_brutes)} caractères")
+        if langue:
+            print(f"     🌐 Langue Notion: {langue}")
         
         return Prospect(
             nom_complet=nom_complet,
@@ -150,5 +154,6 @@ class NotionClient(NotionDataProvider):
             taille=taille or None,
             email=email or None,
             secteur_activite=secteur or None,
-            notes_enrichies=NotesEnrichies(notes_brutes=notes_brutes) if notes_brutes else None
+            notes_enrichies=NotesEnrichies(notes_brutes=notes_brutes) if notes_brutes else None,
+            langue=langue or None
         )

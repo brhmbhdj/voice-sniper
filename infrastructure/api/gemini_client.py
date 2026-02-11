@@ -49,7 +49,7 @@ class GeminiClient(LLMProvider):
             "temperature": 0.7,
             "top_p": 0.95,
             "top_k": 40,
-            "max_output_tokens": 2048,
+            "max_output_tokens": 8192,
         }
 
     def _get_model(self) -> genai.GenerativeModel:
@@ -256,9 +256,23 @@ class GeminiClient(LLMProvider):
     def detecter_langue_ideale(self, prospect: Prospect) -> Language:
         """
         Détecte la langue idéale pour contacter un prospect.
-        Par défaut: Français (car Gradium est une startup française)
+        Priorité: Colonne Notion > Règles > Défaut (Français)
         """
-        # Règles simples avant d'appeler l'API
+        # 1. Priorité à la colonne Langue de Notion
+        if prospect.langue:
+            langue_notion = prospect.langue.upper().strip()
+            if langue_notion in ['FR', 'FRENCH']:
+                return Language.FRENCH
+            elif langue_notion in ['UK', 'EN', 'ENGLISH', 'US']:
+                return Language.ENGLISH
+            elif langue_notion in ['ES', 'SPANISH']:
+                return Language.SPANISH
+            elif langue_notion in ['DE', 'GERMAN']:
+                return Language.GERMAN
+            elif langue_notion in ['IT', 'ITALIAN']:
+                return Language.ITALIAN
+        
+        # 2. Règles par défaut
         nom_lower = prospect.nom_complet.lower() if prospect.nom_complet else ""
         entreprise_lower = prospect.entreprise.lower() if prospect.entreprise else ""
         notes_lower = prospect.notes_enrichies.notes_brutes.lower() if prospect.notes_enrichies and prospect.notes_enrichies.notes_brutes else ""

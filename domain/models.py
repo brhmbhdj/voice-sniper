@@ -65,6 +65,7 @@ class Prospect:
     site_web: Optional[str] = None
     date_creation: Optional[datetime] = None
     notes_enrichies: Optional[NotesEnrichies] = None
+    langue: Optional[str] = None  # Langue préférée (FR, UK, EN, etc.) depuis Notion
 
 
 @dataclass
